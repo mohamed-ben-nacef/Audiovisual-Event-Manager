@@ -1,36 +1,155 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gestion d'Événements Audiovisuels - Frontend
 
-## Getting Started
+Application web Next.js pour la gestion complète d'une entreprise de location de matériel audiovisuel.
 
-First, run the development server:
+## 🚀 Technologies
 
+- **Next.js 16** (App Router)
+- **React 19**
+- **TypeScript**
+- **Tailwind CSS**
+- **Zustand** (State Management)
+- **React Hook Form** + **Zod** (Form validation)
+- **Axios** (API client)
+- **Lucide React** (Icons)
+
+## 📋 Prérequis
+
+- Node.js 18+ 
+- npm ou yarn
+- Backend API en cours d'exécution (port 3000 par défaut)
+
+## 🛠️ Installation
+
+1. **Installer les dépendances**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **Configurer les variables d'environnement**
+Créez un fichier `.env.local` à la racine du projet :
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_APP_NAME=Gestion d'Événements Audiovisuels
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **Démarrer le serveur de développement**
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+L'application sera accessible sur [http://localhost:3001](http://localhost:3001)
 
-## Learn More
+## 📁 Structure du Projet
 
-To learn more about Next.js, take a look at the following resources:
+```
+events_frontend/
+├── app/                    # Pages Next.js (App Router)
+│   ├── dashboard/         # Tableau de bord
+│   ├── events/            # Module Événements
+│   ├── equipment/         # Module Matériel
+│   ├── users/             # Module Utilisateurs
+│   ├── maintenance/       # Module Maintenance
+│   ├── transport/         # Module Transport
+│   ├── whatsapp/         # Module WhatsApp
+│   └── login/             # Page de connexion
+├── components/            # Composants React
+│   ├── ui/               # Composants UI réutilisables
+│   └── layout/           # Composants de layout
+├── lib/                   # Utilitaires et API client
+├── stores/                # Stores Zustand
+├── types/                 # Types TypeScript
+└── public/                # Fichiers statiques
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🎯 Fonctionnalités
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### ✅ Modules Implémentés
 
-## Deploy on Vercel
+1. **Authentification**
+   - Connexion / Déconnexion
+   - Gestion des tokens JWT
+   - Protection des routes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Tableau de bord**
+   - Vue d'ensemble des statistiques
+   - Événements à venir
+   - Matériel en location/maintenance
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Gestion des Événements**
+   - Liste des événements
+   - Création d'événements
+   - Filtres par statut et catégorie
+
+4. **Gestion du Matériel**
+   - Liste du matériel
+   - Filtres par catégorie et statut
+   - Recherche par nom/référence
+
+5. **Gestion des Utilisateurs**
+   - Liste des utilisateurs
+   - Gestion des rôles (ADMIN, MAINTENANCE, TECHNICIEN)
+
+6. **Maintenance**
+   - Liste des maintenances
+   - Suivi des réparations
+
+7. **Transport**
+   - Gestion des véhicules
+   - Planning des transports
+
+8. **WhatsApp**
+   - Historique des messages
+   - Envoi de messages
+
+## 🔐 Rôles Utilisateurs
+
+- **ADMIN** : Accès complet à tous les modules
+- **MAINTENANCE** : Gestion du matériel et maintenances
+- **TECHNICIEN** : Vue des événements assignés et matériel
+
+## 🔌 Configuration API
+
+L'application se connecte au backend via l'URL définie dans `NEXT_PUBLIC_API_URL`.
+
+Le client API (`lib/api.ts`) gère automatiquement :
+- L'ajout du token JWT aux requêtes
+- Le rafraîchissement des tokens
+- La gestion des erreurs
+
+## 📝 Scripts Disponibles
+
+```bash
+npm run dev      # Démarre le serveur de développement
+npm run build    # Compile l'application pour la production
+npm run start    # Démarre le serveur de production
+npm run lint     # Vérifie le code avec ESLint
+```
+
+## 🎨 Personnalisation
+
+### Couleurs et Styles
+
+Les styles sont définis avec Tailwind CSS. Vous pouvez personnaliser les couleurs dans `tailwind.config.ts` ou directement dans les composants.
+
+### Composants UI
+
+Les composants UI réutilisables sont dans `components/ui/`. Ils suivent un système de design cohérent et peuvent être facilement personnalisés.
+
+## 🚧 Développement Futur
+
+- [ ] Scanner QR code pour maintenance
+- [ ] Génération de QR codes pour matériel
+- [ ] Export PDF des documents (plan de feu, bons de sortie)
+- [ ] Interface technicien dédiée
+- [ ] Calendrier des événements
+- [ ] Notifications en temps réel
+- [ ] Mode sombre
+
+## 📄 Licence
+
+Ce projet est développé pour la gestion d'événements audiovisuels.
+
+## 👥 Support
+
+Pour toute question ou problème, contactez l'équipe de développement.
