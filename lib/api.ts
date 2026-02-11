@@ -20,6 +20,9 @@ class ApiClient {
         const tokens = this.getTokens()
         if (tokens?.access_token) {
           config.headers.Authorization = `Bearer ${tokens.access_token}`
+          console.log(`API: Adding token to ${config.method?.toUpperCase()} ${config.url}`)
+        } else {
+          console.warn(`API: No token found for ${config.method?.toUpperCase()} ${config.url}`)
         }
         return config
       },
@@ -158,6 +161,26 @@ class ApiClient {
     return response.data
   }
 
+  async updateEquipmentReservation(eventId: string, reservationId: string, data: any) {
+    const response = await this.client.put(`/events/${eventId}/equipment/${reservationId}`, data)
+    return response.data
+  }
+
+  async removeEventEquipment(eventId: string, reservationId: string) {
+    const response = await this.client.delete(`/events/${eventId}/equipment/${reservationId}`)
+    return response.data
+  }
+
+  async assignTechnician(eventId: string, data: { technician_id: string; role?: string }) {
+    const response = await this.client.post(`/events/${eventId}/technicians`, data)
+    return response.data
+  }
+
+  async removeTechnician(eventId: string, assignmentId: string) {
+    const response = await this.client.delete(`/events/${eventId}/technicians/${assignmentId}`)
+    return response.data
+  }
+
   async getEventDocuments(eventId: string, type: string) {
     const response = await this.client.get(`/events/${eventId}/documents/${type}`, {
       responseType: "blob",
@@ -235,8 +258,39 @@ class ApiClient {
     return response.data
   }
 
+  async createCategory(data: any) {
+    const response = await this.client.post("/categories", data)
+    return response.data
+  }
+
+  async updateCategory(id: string, data: any) {
+    const response = await this.client.put(`/categories/${id}`, data)
+    return response.data
+  }
+
+  async deleteCategory(id: string) {
+    const response = await this.client.delete(`/categories/${id}`)
+    return response.data
+  }
+
+  // Subcategories
+  async createSubcategory(data: any) {
+    const response = await this.client.post("/subcategories", data)
+    return response.data
+  }
+
+  async updateSubcategory(id: string, data: any) {
+    const response = await this.client.put(`/subcategories/${id}`, data)
+    return response.data
+  }
+
+  async deleteSubcategory(id: string) {
+    const response = await this.client.delete(`/subcategories/${id}`)
+    return response.data
+  }
+
   // Users endpoints
-  async getUsers(params?: { role?: string; is_active?: boolean; page?: number; limit?: number }) {
+  async getUsers(params?: { role?: string | string[]; is_active?: boolean; page?: number; limit?: number }) {
     const response = await this.client.get("/users", { params })
     return response.data
   }
@@ -280,17 +334,26 @@ class ApiClient {
   }
 
   async createMaintenance(data: any) {
-    const response = await this.client.post("/maintenances", data)
+    const config = data instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {}
+    const response = await this.client.post("/maintenances", data, config)
     return response.data
   }
 
   async updateMaintenance(id: string, data: any) {
-    const response = await this.client.put(`/maintenances/${id}`, data)
+    const config = data instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {}
+    const response = await this.client.put(`/maintenances/${id}`, data, config)
     return response.data
   }
 
   async completeMaintenance(id: string, data: any) {
-    const response = await this.client.post(`/maintenances/${id}/complete`, data)
+    const config = data instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {}
+    const response = await this.client.post(`/maintenances/${id}/complete`, data, config)
+    return response.data
+  }
+
+  async addMaintenanceLog(id: string, data: any) {
+    const config = data instanceof FormData ? { headers: { "Content-Type": "multipart/form-data" } } : {}
+    const response = await this.client.post(`/maintenances/${id}/logs`, data, config)
     return response.data
   }
 

@@ -141,14 +141,23 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== "undefined" && state) {
           const storedTokens = localStorage.getItem("auth_tokens")
           const storedUser = localStorage.getItem("user")
+
           if (storedTokens && storedUser) {
             try {
               const tokens = JSON.parse(storedTokens)
               const user = JSON.parse(storedUser)
-              state.setTokens(tokens)
-              state.setUser(user)
+
+              // Validate minimal token structure
+              if (tokens && tokens.access_token) {
+                state.tokens = tokens
+                state.user = user
+                state.isAuthenticated = true
+              }
             } catch (e) {
               console.error("Error rehydrating auth:", e)
+              // If corrupted, clear
+              localStorage.removeItem("auth_tokens")
+              localStorage.removeItem("user")
             }
           }
         }

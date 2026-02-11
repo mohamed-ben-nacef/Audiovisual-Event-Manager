@@ -31,7 +31,7 @@ export interface AuthResponse {
 // Category Types
 export interface Category {
   id: string
-  name: "SON" | "VIDEO" | "LUMIERE"
+  name: string
   description?: string
   icon?: string
   subcategories?: Subcategory[]
@@ -160,6 +160,19 @@ export interface Maintenance {
   status: MaintenanceStatus
   solution_description?: string
   photos?: string[]
+  logs?: MaintenanceLog[]
+  created_at: string
+  updated_at: string
+}
+
+export interface MaintenanceLog {
+  id: string
+  maintenance_id: string
+  user_id: string
+  user?: User
+  content: string
+  photos?: string[]
+  type: 'COMMENT' | 'STATUS_CHANGE'
   created_at: string
   updated_at: string
 }
