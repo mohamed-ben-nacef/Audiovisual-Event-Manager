@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, Plus, X, Check } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,11 +38,18 @@ export default function NewEquipmentPage() {
   const [error, setError] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
   const [subcategories, setSubcategories] = useState<any[]>([])
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [isAddingSubcategory, setIsAddingSubcategory] = useState(false)
+  const [newSubcategoryName, setNewSubcategoryName] = useState("")
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [creatingSubcategory, setCreatingSubcategory] = useState(false)
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -72,6 +79,52 @@ export default function NewEquipmentPage() {
       setCategories(response.data?.categories || [])
     } catch (error) {
       console.error("Error fetching categories:", error)
+    }
+  }
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return
+    try {
+      setCreatingCategory(true)
+      const response = await api.createCategory({ name: newCategoryName })
+      if (response.success) {
+        const newCat = response.data.category
+        setCategories([...categories, { ...newCat, subcategories: [] }])
+        setValue("category_id", newCat.id)
+        setIsAddingCategory(false)
+        setNewCategoryName("")
+        // Clear subcategories if category changed
+        setSubcategories([])
+        setValue("subcategory_id", "")
+      }
+    } catch (error) {
+      console.error("Error creating category:", error)
+      setError("Erreur lors de la création de la catégorie")
+    } finally {
+      setCreatingCategory(false)
+    }
+  }
+
+  const handleCreateSubcategory = async () => {
+    if (!newSubcategoryName.trim() || !selectedCategoryId) return
+    try {
+      setCreatingSubcategory(true)
+      const response = await api.createSubcategory({ 
+        name: newSubcategoryName,
+        category_id: selectedCategoryId 
+      })
+      if (response.success) {
+        const newSub = response.data.subcategory
+        setSubcategories([...subcategories, newSub])
+        setValue("subcategory_id", newSub.id)
+        setIsAddingSubcategory(false)
+        setNewSubcategoryName("")
+      }
+    } catch (error) {
+      console.error("Error creating subcategory:", error)
+      setError("Erreur lors de la création de la sous-catégorie")
+    } finally {
+      setCreatingSubcategory(false)
     }
   }
 
@@ -132,18 +185,55 @@ export default function NewEquipmentPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Catégorie *
                 </label>
-                <select
-                  {...register("category_id")}
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                >
-                  <option value="">Sélectionner une catégorie</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.category_id && (
+                {isAddingCategory ? (
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Nom de la catégorie" 
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                    />
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      onClick={handleCreateCategory}
+                      disabled={creatingCategory}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setIsAddingCategory(false)}
+                      disabled={creatingCategory}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <select
+                      {...register("category_id")}
+                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    >
+                      <option value="">Sélectionner une catégorie</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setIsAddingCategory(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                {errors.category_id && !isAddingCategory && (
                   <p className="text-sm text-red-600 mt-1">{errors.category_id.message}</p>
                 )}
               </div>
@@ -152,18 +242,56 @@ export default function NewEquipmentPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Sous-catégorie
                 </label>
-                <select
-                  {...register("subcategory_id")}
-                  disabled={!selectedCategoryId || subcategories.length === 0}
-                  className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:bg-gray-100"
-                >
-                  <option value="">Sélectionner une sous-catégorie</option>
-                  {subcategories.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name}
-                    </option>
-                  ))}
-                </select>
+                {isAddingSubcategory ? (
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Nom de la sous-catégorie" 
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                    />
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      onClick={handleCreateSubcategory}
+                      disabled={creatingSubcategory}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => setIsAddingSubcategory(false)}
+                      disabled={creatingSubcategory}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <select
+                      {...register("subcategory_id")}
+                      disabled={!selectedCategoryId}
+                      className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:bg-gray-100"
+                    >
+                      <option value="">Sélectionner une sous-catégorie</option>
+                      {subcategories.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      disabled={!selectedCategoryId}
+                      onClick={() => setIsAddingSubcategory(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div>

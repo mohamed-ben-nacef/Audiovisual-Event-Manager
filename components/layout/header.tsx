@@ -1,6 +1,7 @@
 "use client"
 
-import { Bell, Search, Settings, HelpCircle, Activity, Command } from "lucide-react"
+import { Bell, Search, Settings, HelpCircle, Activity, Command, PlusCircle } from "lucide-react"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useAuthStore } from "@/stores/auth-store"
@@ -38,6 +39,15 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3">
+           {(user?.role === 'ADMIN' || user?.role === 'TECHNICIEN') && (
+             <Link href="/equipment/new">
+               <Button className="hidden sm:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 h-10 transition-all shadow-lg shadow-blue-100 border-none">
+                 <PlusCircle className="h-4 w-4" />
+                 <span className="text-xs font-bold">Nouveau Matériel</span>
+               </Button>
+             </Link>
+           )}
+           
            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all relative">
               <Bell className="h-5 w-5" />
               <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-red-500 border-2 border-white rounded-full"></span>

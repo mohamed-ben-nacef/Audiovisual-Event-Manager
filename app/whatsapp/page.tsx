@@ -14,7 +14,8 @@ import {
   User,
   Activity,
   Smartphone,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -23,6 +24,15 @@ import { api } from "@/lib/api"
 import { WhatsAppMessage } from "@/types"
 import { Badge } from "@/components/ui/badge"
 import { formatDateTime, cn } from "@/lib/utils"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 const statusConfig: Record<string, { color: string; bg: string; icon: any; label: string }> = {
   ENVOYE: { color: "text-slate-500", bg: "bg-slate-50", icon: Check, label: "Envoyé" },
@@ -35,6 +45,15 @@ export default function WhatsAppPage() {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendMode, setSendMode] = useState<"DIRECT" | "TEMPLATE">("TEMPLATE")
+  const [formData, setFormData] = useState({
+    recipient_phone: "",
+    recipient_name: "",
+    message_content: "",
+    template_name: "hello_world"
+  })
 
   useEffect(() => {
     fetchMessages()
@@ -49,6 +68,36 @@ export default function WhatsAppPage() {
       console.error("Error fetching WhatsApp messages:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const formattedPhone = formData.recipient_phone.startsWith('+') 
+        ? formData.recipient_phone 
+        : formData.recipient_phone.startsWith('216') 
+          ? `+${formData.recipient_phone}` 
+          : `+216${formData.recipient_phone}`;
+
+      const data = sendMode === "TEMPLATE" 
+        ? { ...formData, recipient_phone: formattedPhone, message_type: 'TEMPLATE', message_content: `[Template: ${formData.template_name}]` }
+        : { ...formData, recipient_phone: formattedPhone, message_type: 'DIRECT', template_name: undefined };
+
+      await api.sendWhatsAppMessage(data)
+      setIsDialogOpen(false)
+      setFormData({ 
+        recipient_phone: "", 
+        recipient_name: "", 
+        message_content: "",
+        template_name: "hello_world"
+      })
+      fetchMessages()
+    } catch (error) {
+      console.error("Error sending message:", error)
+      alert("Erreur lors de l'envoi du message")
+    } finally {
+      setSending(false)
     }
   }
 
@@ -72,10 +121,144 @@ export default function WhatsAppPage() {
         </div>
         
         <div className="flex items-center gap-4">
-           <Button className="h-14 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-100 transition-all font-bold active:scale-95">
+           <Button 
+             onClick={() => setIsDialogOpen(true)}
+             className="h-14 px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-100 transition-all font-bold active:scale-95"
+           >
               <Send className="h-5 w-5 mr-3" />
               Diffuser un Message
            </Button>
+
+           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-none shadow-2xl relative">
+                <button 
+                  onClick={() => setIsDialogOpen(false)}
+                  className="absolute right-6 top-6 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <form onSubmit={handleSendMessage}>
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">Envoyer un Message</DialogTitle>
+                    <DialogDescription className="text-slate-500 font-medium">
+                      Envoyez un message WhatsApp direct à un contact.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-6 py-8">
+                    {/* Toggle Mode */}
+                    <div className="flex p-1 bg-slate-100 rounded-2xl gap-1">
+                        <button 
+                            type="button"
+                            onClick={() => setSendMode("TEMPLATE")}
+                            className={cn(
+                                "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                sendMode === "TEMPLATE" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                            )}
+                        >
+                            Templates (Meta)
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => setSendMode("DIRECT")}
+                            className={cn(
+                                "flex-1 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                sendMode === "DIRECT" ? "bg-white text-emerald-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                            )}
+                        >
+                            Message Direct
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nom</label>
+                            <Input
+                                placeholder="Jean Dupont"
+                                value={formData.recipient_name}
+                                onChange={(e) => setFormData({...formData, recipient_name: e.target.value})}
+                                className="h-12 rounded-xl bg-slate-50 border-slate-100"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Numéro</label>
+                            <div className="relative group">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                                    +216
+                                </div>
+                                <Input
+                                    placeholder="8 chiffres"
+                                    value={formData.recipient_phone}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, '').substring(0, 12);
+                                        // If user tries to type 216 at start, let them, but we'll handle it nicely
+                                        setFormData({...formData, recipient_phone: val})
+                                    }}
+                                    className="h-12 rounded-xl bg-slate-50 border-slate-100 pl-14"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {sendMode === "TEMPLATE" ? (
+                        <div className="space-y-4">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sélectionner un Template</label>
+                            <div className="grid gap-3">
+                                {[
+                                    { id: 'hello_world', label: '👋 Hello World (Test)', desc: 'Message de bienvenue standard' },
+                                    { id: 'invitation_equipe', label: '📅 Invitation Staff', desc: 'Envoyer une convocation événement' },
+                                    { id: 'rappel_maintenance', label: '🔧 Rappel Maintenance', desc: 'Alerte entretien matériel' },
+                                ].map(tmpl => (
+                                    <div 
+                                        key={tmpl.id}
+                                        onClick={() => setFormData({...formData, template_name: tmpl.id})}
+                                        className={cn(
+                                            "p-4 rounded-2xl border transition-all cursor-pointer group",
+                                            formData.template_name === tmpl.id 
+                                                ? "bg-emerald-50 border-emerald-200" 
+                                                : "bg-white border-slate-100 hover:border-emerald-100"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className={cn("text-xs font-black uppercase tracking-tight", formData.template_name === tmpl.id ? "text-emerald-700" : "text-slate-900")}>
+                                                {tmpl.label}
+                                            </span>
+                                            {formData.template_name === tmpl.id && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                                        </div>
+                                        <p className="text-[10px] text-slate-500 font-medium italic">{tmpl.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contenu du Message</label>
+                                <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">Session 24H requise</span>
+                            </div>
+                            <Textarea
+                                placeholder="Saisissez votre message ici..."
+                                value={formData.message_content}
+                                onChange={(e) => setFormData({...formData, message_content: e.target.value})}
+                                className="min-h-[120px] rounded-2xl bg-slate-50 border-slate-100 placeholder:italic"
+                                required
+                            />
+                        </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      type="submit" 
+                      disabled={sending}
+                      className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-lg shadow-emerald-100"
+                    >
+                      {sending ? "Envoi en cours..." : "Confirmer l'Envoi"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+           </Dialog>
         </div>
       </div>
 

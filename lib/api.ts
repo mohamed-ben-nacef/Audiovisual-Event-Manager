@@ -1,8 +1,8 @@
 import axios, { AxiosError, AxiosInstance } from "axios"
 import { AuthTokens, User } from "@/types"
 
-const API_URL = "https://events-se67.onrender.com/api"
-
+// const API_URL = "https://events-se67.onrender.com/api"
+const API_URL = "http://localhost:5000/api"
 class ApiClient {
   private client: AxiosInstance
 
@@ -66,8 +66,27 @@ class ApiClient {
 
   private getTokens(): AuthTokens | null {
     if (typeof window === "undefined") return null
+
+    // First try direct tokens key
     const tokens = localStorage.getItem("auth_tokens")
-    return tokens ? JSON.parse(tokens) : null
+    if (tokens) return JSON.parse(tokens)
+
+    // Fallback: Check Zustand store persistence
+    const zustandStore = localStorage.getItem("auth-storage")
+    if (zustandStore) {
+      try {
+        const parsed = JSON.parse(zustandStore)
+        if (parsed.state?.tokens) {
+          // Sync it back for next time
+          localStorage.setItem("auth_tokens", JSON.stringify(parsed.state.tokens))
+          return parsed.state.tokens
+        }
+      } catch (e) {
+        console.error("Error parsing Zustand store:", e)
+      }
+    }
+
+    return null
   }
 
   private setTokens(tokens: AuthTokens): void {
@@ -411,7 +430,7 @@ class ApiClient {
 
   // WhatsApp endpoints
   async sendWhatsAppMessage(data: any) {
-    const response = await this.client.post("/whatsapp-messages/send", data)
+    const response = await this.client.post("/whatsapp-messages", data)
     return response.data
   }
 
