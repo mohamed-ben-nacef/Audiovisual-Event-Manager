@@ -9,15 +9,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { api } from "@/lib/api"
 import { EventEquipment, Equipment } from "@/types"
+import { QRScanner } from "@/components/QRScanner"
+import { useAuthStore } from "@/stores/auth-store"
+import { Scan } from "lucide-react"
 
 export default function EventEquipmentPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuthStore()
   const eventId = params.id as string
   const [eventEquipment, setEventEquipment] = useState<EventEquipment[]>([])
   const [availableEquipment, setAvailableEquipment] = useState<Equipment[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
 
   useEffect(() => {
     if (eventId) {
@@ -55,6 +60,27 @@ export default function EventEquipmentPage() {
     }
   }
 
+  const handleScan = async (scannedText: string) => {
+    // Find equipment with this reference in the event list
+    const item = eventEquipment.find((e) => e.equipment?.reference === scannedText)
+
+    if (item) {
+      try {
+        await api.updateEquipmentReservation(eventId, item.id, {
+          status: "LIVRE",
+        })
+        alert(`Produit ${item.equipment?.name} validé !`)
+        fetchData()
+      } catch (error) {
+        console.error("Error updating status:", error)
+        alert("Erreur lors de la validation du produit")
+      }
+    } else {
+      alert(`Produit avec la référence ${scannedText} non trouvé dans cet événement.`)
+    }
+    setShowScanner(false)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -80,11 +106,23 @@ export default function EventEquipmentPage() {
             <p className="text-gray-600 mt-2">Gérez le matériel réservé pour cet événement</p>
           </div>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Ajouter du matériel
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowScanner(true)}>
+            <Scan className="h-4 w-4 mr-2" />
+            Scanner QR
+          </Button>
+          {user?.role !== 'TECHNICIEN' && (
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter du matériel
+            </Button>
+          )}
+        </div>
       </div>
+
+      {showScanner && (
+        <QRScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
+      )}
 
       <Card>
         <CardHeader>

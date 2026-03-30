@@ -19,12 +19,22 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { api } from "@/lib/api"
 import { Category } from "@/types"
+import { useAuthStore } from "@/stores/auth-store"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 export default function CategoriesPage() {
+  const { user } = useAuthStore()
+  const router = useRouter()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (user && user.role === 'TECHNICIEN') {
+      router.push('/dashboard')
+    }
+  }, [user, router])
   
   // Create/Edit Dialog States
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)

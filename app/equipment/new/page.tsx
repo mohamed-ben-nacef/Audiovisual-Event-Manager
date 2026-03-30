@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { api } from "@/lib/api"
 import { Category } from "@/types"
+import { useAuthStore } from "@/stores/auth-store"
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -34,7 +35,14 @@ type EquipmentFormData = z.infer<typeof equipmentSchema>
 
 export default function NewEquipmentPage() {
   const router = useRouter()
+  const { user } = useAuthStore()
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (user && user.role === 'TECHNICIEN') {
+      router.push('/dashboard')
+    }
+  }, [user, router])
   const [error, setError] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
   const [subcategories, setSubcategories] = useState<any[]>([])

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/stores/auth-store"
 import { 
   Plus, 
   Search, 
@@ -34,6 +36,8 @@ const statusConfig: Record<EquipmentStatus, { label: string; color: string; bg: 
 }
 
 export default function EquipmentPage() {
+  const { user } = useAuthStore()
+  const router = useRouter()
   const [equipment, setEquipment] = useState<Equipment[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -41,6 +45,12 @@ export default function EquipmentPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [categories, setCategories] = useState<any[]>([])
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+
+  useEffect(() => {
+    if (user && user.role === 'TECHNICIEN') {
+      router.push('/dashboard')
+    }
+  }, [user, router])
 
   useEffect(() => {
     fetchCategories()

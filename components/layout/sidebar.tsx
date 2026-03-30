@@ -25,9 +25,9 @@ import { cn } from "@/lib/utils"
 
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MAINTENANCE", "TECHNICIEN"] },
-  { href: "/equipment/new", label: "Ajouter Matériel", icon: PlusCircle, roles: ["ADMIN", "TECHNICIEN"] },
+  { href: "/equipment/new", label: "Ajouter Matériel", icon: PlusCircle, roles: ["ADMIN"] },
   { href: "/events", label: "Événements", icon: Calendar, roles: ["ADMIN", "TECHNICIEN"] },
-  { href: "/equipment", label: "Inventaire", icon: Package, roles: ["ADMIN", "MAINTENANCE", "TECHNICIEN"] },
+  { href: "/equipment", label: "Inventaire", icon: Package, roles: ["ADMIN", "MAINTENANCE"] },
   { href: "/maintenance", label: "Maintenance", icon: Wrench, roles: ["ADMIN", "MAINTENANCE"] },
   { href: "/transport", label: "Logistique", icon: Truck, roles: ["ADMIN"] },
   { href: "/users", label: "Équipe", icon: Users, roles: ["ADMIN"] },

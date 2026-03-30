@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge"
 import { api } from "@/lib/api"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import { Equipment, EquipmentStatusHistory } from "@/types"
+import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/lib/utils"
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; icon: any }> = {
@@ -43,9 +44,16 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; i
 export default function EquipmentDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuthStore()
   const equipmentId = params.id as string
   const [equipment, setEquipment] = useState<Equipment | null>(null)
   const [history, setHistory] = useState<EquipmentStatusHistory[]>([])
+
+  useEffect(() => {
+    if (user && user.role === 'TECHNICIEN') {
+      router.push('/dashboard')
+    }
+  }, [user, router])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -331,7 +339,22 @@ export default function EquipmentDetailPage() {
                  <div className="relative group mx-auto w-48 h-48 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-center transition-all hover:shadow-2xl hover:border-blue-100">
                     <img src={equipment.qr_code_url} alt="QR Code" className="w-full h-full object-contain" />
                  </div>
-                 <Button variant="ghost" className="w-full text-blue-600 font-bold hover:bg-blue-50 rounded-xl">Télécharger l'étiquette</Button>
+                 <Button 
+                    variant="ghost" 
+                    className="w-full text-blue-600 font-bold hover:bg-blue-50 rounded-xl"
+                    onClick={() => {
+                        if (equipment.qr_code_url) {
+                            const link = document.createElement('a');
+                            link.href = equipment.qr_code_url;
+                            link.download = `QR_${equipment.reference}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                    }}
+                 >
+                    Télécharger l'étiquette
+                 </Button>
               </Card>
            )}
 

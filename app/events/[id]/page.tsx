@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge"
 import { api } from "@/lib/api"
 import { formatDate, formatCurrency } from "@/lib/utils"
 import { Event, EventEquipment } from "@/types"
+import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/lib/utils"
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -44,6 +45,7 @@ export default function EventDetailPage() {
   const params = useParams()
   const router = useRouter()
   const eventId = params.id as string
+  const { user } = useAuthStore()
   const [event, setEvent] = useState<Event | null>(null)
   const [equipment, setEquipment] = useState<EventEquipment[]>([])
   const [loading, setLoading] = useState(true)
@@ -265,7 +267,7 @@ export default function EventDetailPage() {
                     <CardDescription className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">Unités et services mobilisés</CardDescription>
                  </div>
                  <Link href={`/events/${eventId}/equipment`}>
-                    <Button variant="ghost" className="h-10 rounded-xl px-4 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:bg-blue-50">Modifier l'inventaire <ChevronRight className="h-4 w-4 ml-1" /></Button>
+                    <Button variant="ghost" className="h-10 rounded-xl px-4 text-blue-600 font-black text-[10px] uppercase tracking-widest hover:bg-blue-50">{user?.role === 'TECHNICIEN' ? 'Vérifier / Scanner le Matériel' : 'Modifier l\'inventaire'} <ChevronRight className="h-4 w-4 ml-1" /></Button>
                  </Link>
               </CardHeader>
               <CardContent className="p-0">
