@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import Cookies from "js-cookie"
 import { User, AuthTokens } from "@/types"
 import { api } from "@/lib/api"
 
@@ -8,6 +9,7 @@ interface AuthState {
   tokens: AuthTokens | null
   isAuthenticated: boolean
   isLoading: boolean
+  hydrated: boolean
   login: (email: string, password: string) => Promise<void>
   register: (data: {
     email: string
@@ -29,6 +31,7 @@ export const useAuthStore = create<AuthState>()(
       tokens: null,
       isAuthenticated: false,
       isLoading: false,
+      hydrated: false,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true })
@@ -40,6 +43,7 @@ export const useAuthStore = create<AuthState>()(
             if (typeof window !== "undefined") {
               localStorage.setItem("auth_tokens", JSON.stringify(tokens))
               localStorage.setItem("user", JSON.stringify(user))
+              Cookies.set("auth_token", tokens.access_token, { expires: 7 })
             }
             set({
               user,
@@ -86,6 +90,7 @@ export const useAuthStore = create<AuthState>()(
           if (typeof window !== "undefined") {
             localStorage.removeItem("auth_tokens")
             localStorage.removeItem("user")
+            Cookies.remove("auth_token")
           }
           set({
             user: null,
@@ -126,6 +131,7 @@ export const useAuthStore = create<AuthState>()(
         set({ tokens })
         if (tokens && typeof window !== "undefined") {
           localStorage.setItem("auth_tokens", JSON.stringify(tokens))
+          Cookies.set("auth_token", tokens.access_token, { expires: 7 })
         }
       },
     }),
@@ -137,6 +143,10 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.hydrated = true
+        }
+        
         // After rehydration, check localStorage for tokens
         if (typeof window !== "undefined" && state) {
           const storedTokens = localStorage.getItem("auth_tokens")
@@ -152,12 +162,14 @@ export const useAuthStore = create<AuthState>()(
                 state.tokens = tokens
                 state.user = user
                 state.isAuthenticated = true
+                Cookies.set("auth_token", tokens.access_token, { expires: 7 })
               }
             } catch (e) {
               console.error("Error rehydrating auth:", e)
               // If corrupted, clear
               localStorage.removeItem("auth_tokens")
               localStorage.removeItem("user")
+              Cookies.remove("auth_token")
             }
           }
         }

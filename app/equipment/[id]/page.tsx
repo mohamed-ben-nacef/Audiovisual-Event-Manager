@@ -33,6 +33,7 @@ import { formatDate, formatCurrency } from "@/lib/utils"
 import { Equipment, EquipmentStatusHistory } from "@/types"
 import { useAuthStore } from "@/stores/auth-store"
 import { cn } from "@/lib/utils"
+import QRCode from "qrcode"
 
 const statusConfig: Record<string, { label: string; color: string; bg: string; icon: any }> = {
   DISPONIBLE: { label: "Disponible", color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle },
@@ -48,6 +49,7 @@ export default function EquipmentDetailPage() {
   const equipmentId = params.id as string
   const [equipment, setEquipment] = useState<Equipment | null>(null)
   const [history, setHistory] = useState<EquipmentStatusHistory[]>([])
+  const [showPublicQR, setShowPublicQR] = useState(false)
 
   useEffect(() => {
     if (user && user.role === 'TECHNICIEN') {
@@ -56,6 +58,26 @@ export default function EquipmentDetailPage() {
   }, [user, router])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (showPublicQR && equipment) {
+      const generateQR = async () => {
+        const canvas = document.getElementById('public-qr-canvas') as HTMLCanvasElement;
+        if (canvas) {
+          const publicUrl = `${window.location.origin}/QTE/${equipment.id}`;
+          await QRCode.toCanvas(canvas, publicUrl, {
+            width: 200,
+            margin: 2,
+            color: {
+              dark: '#0f172a',
+              light: '#ffffff',
+            },
+          });
+        }
+      };
+      generateQR();
+    }
+  }, [showPublicQR, equipment])
 
   useEffect(() => {
     if (equipmentId) {
@@ -172,11 +194,58 @@ export default function EquipmentDetailPage() {
                  Mettre à jour
               </Button>
            </Link>
-           <Button variant="ghost" className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 hover:text-orange-600 border border-slate-100 hover:border-orange-100 transition-all">
+           <Button 
+              variant="ghost" 
+              className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-400 hover:text-orange-600 border border-slate-100 hover:border-orange-100 transition-all"
+              onClick={() => setShowPublicQR(true)}
+           >
               <QrCode className="h-5 w-5" />
            </Button>
         </div>
       </div>
+
+      {showPublicQR && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-6 animate-in fade-in duration-300">
+           <Card className="w-full max-w-md border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white">
+              <CardHeader className="bg-slate-900 text-white p-10 text-center space-y-2">
+                 <CardTitle className="text-2xl font-black uppercase tracking-tight">QR Code Public</CardTitle>
+                 <CardDescription className="text-slate-400 font-bold uppercase text-[9px] tracking-widest">Lien de consultation sans connexion</CardDescription>
+              </CardHeader>
+              <CardContent className="p-12 space-y-10 flex flex-col items-center">
+                 <div className="relative p-6 bg-white rounded-[2rem] border-2 border-slate-50 shadow-inner group">
+                    <canvas id="public-qr-canvas" className="w-48 h-48"></canvas>
+                 </div>
+                 
+                 <div className="text-center space-y-4">
+                    <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">{equipment.name}</p>
+                    <p className="text-[10px] text-slate-400 font-medium italic">Scannez pour voir la quantité disponible et le matériel cassé.</p>
+                 </div>
+
+                 <div className="flex gap-4 w-full">
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setShowPublicQR(false)}
+                      className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase tracking-widest"
+                    >
+                      Fermer
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        const canvas = document.getElementById('public-qr-canvas') as HTMLCanvasElement;
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL();
+                        link.download = `QR_PUBLIC_${equipment.reference}.png`;
+                        link.click();
+                      }}
+                      className="flex-1 h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100"
+                    >
+                      Télécharger
+                    </Button>
+                 </div>
+              </CardContent>
+           </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         {/* Main Details Area */}

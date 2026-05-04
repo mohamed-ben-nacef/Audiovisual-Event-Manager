@@ -22,13 +22,24 @@ const equipmentSchema = z.object({
   model: z.string().optional(),
   description: z.string().optional(),
   technical_specs: z.string().optional(),
-  quantity_total: z.number().min(1, "La quantité doit être au moins 1"),
+  quantity_total: z.number().min(0).optional(),
+  is_lot_based: z.boolean().default(false),
+  items_per_lot: z.number().min(1, "Doit être au moins 1").default(1),
+  quantity_lots: z.number().min(0).optional(),
   purchase_price: z.number().optional(),
   daily_rental_price: z.number().optional(),
   purchase_date: z.string().optional(),
   warranty_end_date: z.string().optional(),
   supplier: z.string().optional(),
   weight_kg: z.number().optional(),
+}).refine((data) => {
+  if (data.is_lot_based) {
+    return (data.quantity_lots ?? 0) >= 1;
+  }
+  return (data.quantity_total ?? 0) >= 1;
+}, {
+  message: "La quantité est requise",
+  path: ["quantity_total"]
 })
 
 type EquipmentFormData = z.infer<typeof equipmentSchema>
@@ -63,6 +74,9 @@ export default function NewEquipmentPage() {
     resolver: zodResolver(equipmentSchema),
     defaultValues: {
       quantity_total: 1,
+      is_lot_based: false,
+      items_per_lot: 1,
+      quantity_lots: 1,
     },
   })
 
@@ -312,19 +326,62 @@ export default function NewEquipmentPage() {
                 <Input {...register("model")} />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantité totale *
-                </label>
-                <Input
-                  type="number"
-                  {...register("quantity_total", { valueAsNumber: true })}
-                  className={errors.quantity_total ? "border-red-500" : ""}
+              <div className="md:col-span-2 flex items-center gap-2 bg-blue-50 p-3 rounded-md">
+                <input
+                  type="checkbox"
+                  id="is_lot_based"
+                  {...register("is_lot_based")}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                {errors.quantity_total && (
-                  <p className="text-sm text-red-600 mt-1">{errors.quantity_total.message}</p>
-                )}
+                <label htmlFor="is_lot_based" className="text-sm font-medium text-blue-900">
+                  Gérer par lots (exemple : lot de 10 pièces)
+                </label>
               </div>
+
+              {watch("is_lot_based") ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de lots *
+                    </label>
+                    <Input
+                      type="number"
+                      {...register("quantity_lots", { valueAsNumber: true })}
+                      className={errors.quantity_lots ? "border-red-500" : ""}
+                    />
+                    {errors.quantity_lots && (
+                      <p className="text-sm text-red-600 mt-1">{errors.quantity_lots.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pièces par lot *
+                    </label>
+                    <Input
+                      type="number"
+                      {...register("items_per_lot", { valueAsNumber: true })}
+                      className={errors.items_per_lot ? "border-red-500" : ""}
+                    />
+                    {errors.items_per_lot && (
+                      <p className="text-sm text-red-600 mt-1">{errors.items_per_lot.message}</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Quantité totale *
+                  </label>
+                  <Input
+                    type="number"
+                    {...register("quantity_total", { valueAsNumber: true })}
+                    className={errors.quantity_total ? "border-red-500" : ""}
+                  />
+                  {errors.quantity_total && (
+                    <p className="text-sm text-red-600 mt-1">{errors.quantity_total.message}</p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Poids (kg)</label>

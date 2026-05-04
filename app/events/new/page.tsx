@@ -51,6 +51,7 @@ const eventSchema = z.object({
     subcategory_id: z.string().optional(),
     equipment_id: z.string().min(1, "Produit requis"),
     quantity: z.number().min(1, "Quantité invalide"),
+    lots_reserved: z.number().optional(),
   })).optional(),
   staff: z.array(z.object({
     technician_id: z.string().min(1, "Technicien requis"),
@@ -147,7 +148,8 @@ export default function NewEventPage() {
               .filter(p => p.equipment_id && p.quantity > 0)
               .map(p => api.addEventEquipment(eventId, {
                 equipment_id: p.equipment_id,
-                quantity_reserved: p.quantity
+                quantity_reserved: p.quantity,
+                lots_reserved: p.lots_reserved
               }))
           )
         }
@@ -545,7 +547,20 @@ export default function NewEventPage() {
                         </td>
                         <td className="px-6 py-4">
                           <select
-                            {...register(`products.${index}.equipment_id` as const)}
+                            {...register(`products.${index}.equipment_id` as const, {
+                              onChange: (e) => {
+                                const eqId = e.target.value;
+                                if (!eqId) return;
+                                const eq = (equipmentByCategory[categoryId] || []).find(el => el.id === eqId);
+                                if (eq?.is_lot_based) {
+                                  setValue(`products.${index}.lots_reserved`, 1);
+                                  setValue(`products.${index}.quantity`, eq.items_per_lot);
+                                } else {
+                                  setValue(`products.${index}.lots_reserved`, undefined);
+                                  setValue(`products.${index}.quantity`, 1);
+                                }
+                              }
+                            })}
                             className="w-full h-10 rounded-xl border-gray-100 bg-white shadow-sm font-semibold text-xs focus:ring-orange-500 outline-none transition-all px-3 disabled:opacity-50"
                             disabled={!categoryId}
                           >
@@ -574,13 +589,46 @@ export default function NewEventPage() {
                             )
                           })()}
                         </td>
-                        <td className="px-2 py-4 text-center">
-                          <Input
-                            type="number"
-                            {...register(`products.${index}.quantity` as const, { valueAsNumber: true })}
-                            className="h-10 text-center font-bold bg-white rounded-xl border-gray-100 shadow-sm w-full"
-                            min={1}
-                          />
+                        <td className="px-2 py-4">
+                          {(() => {
+                            const eqId = watchedProducts?.[index]?.equipment_id
+                            if (!eqId || !categoryId) return <span className="text-gray-300">-</span>
+                            const eq = (equipmentByCategory[categoryId] || []).find(e => e.id === eqId)
+                            
+                            if (eq?.is_lot_based) {
+                              return (
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-black uppercase text-blue-500">Lots</label>
+                                  <Input
+                                    type="number"
+                                    placeholder="Lots"
+                                    className="h-10 text-center font-bold bg-blue-50/50 border-blue-100 rounded-xl"
+                                    min={1}
+                                    {...register(`products.${index}.lots_reserved` as const, {
+                                      valueAsNumber: true,
+                                      onChange: (e) => {
+                                        const val = parseInt(e.target.value) || 0;
+                                        setValue(`products.${index}.quantity`, val * eq.items_per_lot);
+                                      }
+                                    })}
+                                  />
+                                  <p className="text-[9px] font-medium text-gray-400 text-center">{eq.items_per_lot} pcs/lot</p>
+                                </div>
+                              )
+                            }
+
+                            return (
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-black uppercase text-gray-400">Quantité</label>
+                                <Input
+                                  type="number"
+                                  {...register(`products.${index}.quantity` as const, { valueAsNumber: true })}
+                                  className="h-10 text-center font-bold bg-white rounded-xl border-gray-100 shadow-sm w-full"
+                                  min={1}
+                                />
+                              </div>
+                            )
+                          })()}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <Button

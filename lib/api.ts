@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosInstance } from "axios"
 import { AuthTokens, User } from "@/types"
 
 // const API_URL = "https://events-se67.onrender.com/api"
-const API_URL = "http://localhost:5000/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://105.106.105.25:5000/api"
 class ApiClient {
   private client: AxiosInstance
 
@@ -105,6 +105,7 @@ class ApiClient {
   // Auth endpoints
   async login(email: string, password: string) {
     const response = await this.client.post("/auth/login", { email, password })
+    console.log(response.data)
     return response.data
   }
 

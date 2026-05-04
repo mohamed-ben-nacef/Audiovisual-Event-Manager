@@ -9,20 +9,19 @@ import { Loader2, Sparkles } from "lucide-react"
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, isAuthenticated, isLoading, fetchUser, tokens } = useAuthStore()
+  const { user, isAuthenticated, isLoading, fetchUser, tokens, hydrated } = useAuthStore()
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Wait a bit for persist to hydrate
-      await new Promise(resolve => setTimeout(resolve, 100))
+      // Don't do anything until hydrated
+      if (!hydrated) return
 
       // If we have tokens but no user, try to fetch user
       if (tokens && !user && !isLoading) {
         try {
           await fetchUser()
         } catch (error) {
-          // If fetch fails, user is not authenticated
           console.error("Failed to fetch user:", error)
         }
       }
@@ -36,10 +35,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     }
 
     checkAuth()
-  }, [isAuthenticated, isLoading, user, router, fetchUser, tokens])
+  }, [isAuthenticated, isLoading, user, router, fetchUser, tokens, hydrated])
 
-  // Show loading only if we're still checking or loading
-  if (isChecking || (isLoading && !user)) {
+  // Show loading only if we're still checking or loading or not hydrated
+  if (!hydrated || isChecking || (isLoading && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-6">

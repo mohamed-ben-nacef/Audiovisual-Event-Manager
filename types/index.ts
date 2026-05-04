@@ -65,6 +65,11 @@ export interface Equipment {
   technical_specs?: string
   quantity_total: number
   quantity_available: number
+  quantity_broken: number
+  quantity_in_maintenance: number
+  quantity_in_rental: number
+  is_lot_based: boolean
+  items_per_lot: number
   purchase_price?: number
   daily_rental_price?: number
   purchase_date?: string
@@ -125,7 +130,9 @@ export interface EventEquipment {
   event?: Event
   equipment?: Equipment
   quantity_reserved: number
+  lots_reserved: number
   quantity_returned: number
+  items_broken: number
   status: "RESERVE" | "LIVRE" | "RETOURNE"
   notes?: string
   created_at: string
